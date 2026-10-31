@@ -1,0 +1,1032 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Старый замок — 3D Explorer</title>
+
+<style>
+* { box-sizing:border-box; }
+html,body {
+  margin:0;width:100%;height:100%;overflow:hidden;
+  background:#101820;color:#eee;
+  font-family:Georgia,serif;touch-action:none;
+}
+canvas { display:block; }
+#ui { position:fixed;inset:0;pointer-events:none; }
+#top {
+  position:absolute;top:16px;left:16px;right:16px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:10px;text-shadow:0 2px 5px #000;
+}
+h1 { font-size:19px;font-weight:normal;margin:0 0 5px;letter-spacing:2px; }
+#subtitle {font:11px sans-serif;color:#c4c9c7;letter-spacing:1px}
+#inventory {
+  font:12px sans-serif;background:#121a20c9;border:1px solid #a5a58d55;
+  border-radius:8px;padding:10px;max-width:160px;line-height:1.7;
+}
+#hint {
+  position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);
+  font:14px sans-serif;text-align:center;
+  background:#101820d9;padding:12px 18px;border-radius:7px;
+  border:1px solid #b8aa8466;display:none;max-width:85vw;
+}
+#message {
+  position:absolute;left:50%;top:18%;transform:translateX(-50%);
+  text-align:center;background:#101820d9;border:1px solid #c5b38b66;
+  padding:13px 18px;border-radius:6px;max-width:85vw;
+  font-size:15px;display:none;
+}
+#crosshair {
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:7px;height:7px;border:1px solid #fff;border-radius:50%;
+  opacity:.8;
+}
+#controls {
+  position:absolute;bottom:18px;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  padding:0 20px;pointer-events:none;
+}
+#joy {
+  width:120px;height:120px;border-radius:50%;
+  background:#c6c7c32b;border:1px solid #ffffff55;
+  position:relative;pointer-events:auto;touch-action:none;
+}
+#knob {
+  position:absolute;width:47px;height:47px;left:36px;top:36px;
+  border-radius:50%;background:#d8d3c599;border:1px solid #fff9;
+}
+#actions {
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  pointer-events:auto;
+}
+.action {
+  width:66px;height:66px;border-radius:50%;
+  border:1px solid #d8d0b788;background:#18222ac9;color:#eee;
+  font-size:12px;touch-action:manipulation;
+}
+#interact {width:84px;height:84px;background:#6f684cbb;font-size:14px}
+#looktip {
+  position:absolute;bottom:152px;right:20px;font:11px sans-serif;
+  color:#ddd9;text-align:center;
+}
+#start {
+  position:fixed;inset:0;z-index:5;display:flex;
+  align-items:center;justify-content:center;
+  background:linear-gradient(#111923b9,#111923ed),
+    radial-gradient(ellipse at center,#59645d,#111820);
+  padding:24px;text-align:center;
+}
+#startbox {max-width:440px}
+#start h2 {font-size:36px;font-weight:normal;letter-spacing:3px;margin:0 0 12px}
+#start p {font:14px/1.7 sans-serif;color:#d2d4d0}
+#start button {
+  margin-top:16px;padding:15px 30px;background:#c2b38b;
+  color:#1a211f;border:0;font:15px Georgia;letter-spacing:1px;
+  border-radius:3px;
+}
+#mapnote {
+  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  font:10px sans-serif;color:#ddd9;white-space:nowrap;
+}
+@media (hover:hover) and (pointer:fine) {
+  #controls,#looktip {display:none}
+}
+</style>
+</head>
+
+<body>
+<div id="ui">
+  <div id="top">
+    <div>
+      <h1>СТАРЫЙ ЗАМОК</h1>
+      <div id="subtitle">ХРОНИКИ ЗАБЫТОГО КОРОЛЕВСТВА</div>
+    </div>
+    <div id="inventory">
+      <div>Реликвии: <span id="count">0</span></div>
+      <div>Ключи: <span id="keys">0</span></div>
+    </div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="hint"></div>
+  <div id="message"></div>
+  <div id="controls">
+    <div id="joy"><div id="knob"></div></div>
+    <div id="actions">
+      <button class="action" id="jump">ПРЫЖОК</button>
+      <button class="action" id="interact">ОСМОТРЕТЬ</button>
+    </div>
+  </div>
+  <div id="looktip">Веди пальцем по правой части экрана,<br>чтобы осмотреться</div>
+  <div id="mapnote">ИССЛЕДУЙ. НАБЛЮДАЙ. НАХОДИ.</div>
+</div>
+
+<div id="start">
+  <div id="startbox">
+    <h2>СТАРЫЙ ЗАМОК</h2>
+    <p>Заброшенное королевство хранит больше тайн, чем кажется.</p>
+    <p>Исследуй внутренний двор, башни, библиотеку и древние залы.
+    Ищи ключи, читай записки и открывай запертые двери.</p>
+    <p>Телефон: джойстик слева, обзор справа.<br>
+    Компьютер: WASD, мышь, E — взаимодействие.</p>
+    <button id="begin">ВОЙТИ В ЗАМОК</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================
+   1. ОСНОВА МИРА
+===================================================== */
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x89949a);
+scene.fog = new THREE.FogExp2(0x89949a, 0.0036);
+
+const camera = new THREE.PerspectiveCamera(
+  76, innerWidth / innerHeight, 0.1, 350
+);
+camera.rotation.order = 'YXZ';
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  powerPreference: 'high-performance'
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xcbd8e3, 0x494239, 2.0));
+
+const moonLight = new THREE.DirectionalLight(0xffe2b0, 2.2);
+moonLight.position.set(-35, 55, 20);
+moonLight.castShadow = true;
+moonLight.shadow.mapSize.set(1024, 1024);
+moonLight.shadow.camera.left = -55;
+moonLight.shadow.camera.right = 55;
+moonLight.shadow.camera.top = 55;
+moonLight.shadow.camera.bottom = -55;
+scene.add(moonLight);
+
+const mat = (color, roughness=0.92, extra={}) =>
+  new THREE.MeshStandardMaterial({color, roughness, ...extra});
+
+const stone = mat(0x777974);
+const stoneLight = mat(0x92928a);
+const darkStone = mat(0x454a49);
+const floorMat = mat(0x646962);
+const moss = mat(0x485746);
+const wood = mat(0x493729);
+const woodLight = mat(0x76563a);
+const metal = mat(0x555b5b, 0.4, {metalness:0.55});
+const gold = mat(0xb99a52, 0.4, {metalness:0.55});
+const glass = mat(0x536d78, 0.25, {
+  emissive:0x172b35, emissiveIntensity:0.5
+});
+
+const colliders = [];
+const interactables = [];
+const animatedDoors = [];
+const pickups = [];
+const flickerLights = [];
+
+const boxGeo = new THREE.BoxGeometry(1,1,1);
+const sphereGeo = new THREE.SphereGeometry(1,12,8);
+const cylinderGeo = new THREE.CylinderGeometry(1,1,1,10);
+const tempVec = new THREE.Vector3();
+
+function box(name, x,y,z, sx,sy,sz, material, options={}) {
+  const mesh = new THREE.Mesh(boxGeo, material);
+  mesh.name = name;
+  mesh.position.set(x,y,z);
+  mesh.scale.set(sx,sy,sz);
+  mesh.castShadow = options.castShadow !== false;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  if(options.solid !== false) {
+    colliders.push({
+      minX:x-sx/2, maxX:x+sx/2,
+      minY:y-sy/2, maxY:y+sy/2,
+      minZ:z-sz/2, maxZ:z+sz/2,
+      mesh
+    });
+  }
+  return mesh;
+}
+
+function cylinder(name,x,y,z,rTop,rBottom,height,material,segments=10) {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(rTop,rBottom,height,segments),
+    material
+  );
+  mesh.name=name;
+  mesh.position.set(x,y,z);
+  mesh.castShadow=true;
+  mesh.receiveShadow=true;
+  scene.add(mesh);
+  return mesh;
+}
+
+function sphere(name,x,y,z,r,material) {
+  const mesh = new THREE.Mesh(sphereGeo,material);
+  mesh.name=name;
+  mesh.position.set(x,y,z);
+  mesh.scale.set(r,r,r);
+  mesh.castShadow=true;
+  scene.add(mesh);
+  return mesh;
+}
+
+function addCollider(x,z,sx,sz,minY=0,maxY=4) {
+  colliders.push({
+    minX:x-sx/2,maxX:x+sx/2,
+    minZ:z-sz/2,maxZ:z+sz/2,
+    minY,maxY
+  });
+}
+
+function wall(x,y,z,sx,sy,sz,material=stone) {
+  return box('Каменная стена',x,y,z,sx,sy,sz,material);
+}
+
+function floor(x,z,sx,sz,material=floorMat) {
+  return box('Пол',x,-0.22,z,sx,0.44,sz,material);
+}
+
+/* =====================================================
+   2. ТЕРРИТОРИЯ И ДАЛЬНИЕ ГОРЫ
+===================================================== */
+
+// Большой остров земли: на территории замка есть куда идти.
+floor(0,0,180,180,mat(0x62685d));
+floor(0,-90,180,2,moss);
+floor(0,90,180,2,moss);
+floor(-90,0,2,180,moss);
+floor(90,0,2,180,moss);
+
+const mountainMat = mat(0x626c70);
+for(let i=0;i<24;i++) {
+  const a=i/24*Math.PI*2;
+  const r=92+Math.random()*12;
+  const h=18+Math.random()*27;
+  const m=new THREE.Mesh(
+    new THREE.ConeGeometry(9+Math.random()*12,h,5),mountainMat
+  );
+  m.position.set(Math.cos(a)*r,h/2-4,Math.sin(a)*r);
+  m.rotation.y=Math.random()*Math.PI;
+  scene.add(m);
+}
+
+// Случайные камни и мшистые участки.
+for(let i=0;i<230;i++) {
+  const x=(Math.random()-0.5)*155;
+  const z=(Math.random()-0.5)*155;
+  if(Math.abs(x)<19 && Math.abs(z)<19) continue;
+  if(Math.abs(x)>86 || Math.abs(z)>86) continue;
+  const r=0.3+Math.random()*1.5;
+  const b=sphere('Камень',x,r*0.45,z,r,
+    Math.random()>0.5?darkStone:moss);
+  b.scale.set(1+Math.random(),0.45+Math.random()*0.7,1);
+}
+
+// Старые деревья.
+function tree(x,z,s=1) {
+  cylinder('Ствол',x,2*s,z,0.3*s,0.5*s,4*s,wood,7);
+  for(let i=0;i<3;i++) {
+    const crown=new THREE.Mesh(
+      new THREE.ConeGeometry((2.5-i*0.45)*s,3.2*s,7),
+      mat(i===1?0x344438:0x3c4c3b)
+    );
+    crown.position.set(x,(4.2+i*1.6)*s,z);
+    crown.castShadow=true;
+    scene.add(crown);
+  }
+}
+for(let i=0;i<44;i++) {
+  const x=(Math.random()-0.5)*150;
+  const z=(Math.random()-0.5)*150;
+  if(Math.abs(x)<22 && Math.abs(z)<22) continue;
+  tree(x,z,0.65+Math.random()*0.8);
+}
+
+/* =====================================================
+   3. ЗАМОК: ДВОР, СТЕНЫ, БАШНИ
+===================================================== */
+
+// Внутренний двор: 42 на 42 метра.
+floor(0,0,42,42,mat(0x77766d));
+
+// Крепостные стены с проходом в центре южной стены.
+wall(-20,5,0,2,10,40);
+wall(20,5,0,2,10,40);
+wall(0,5,-20,40,10,2);
+wall(-12,5,20,16,10,2);
+wall(12,5,20,16,10,2);
+
+// Верхушки стен и зубцы.
+for(let i=-9;i<=9;i++) {
+  if(i%2===0) {
+    box('Зубец стены',i*2,10.5,-20,1.3,1.5,2,stoneLight);
+    box('Зубец стены',i*2,10.5,20,1.3,1.5,2,stoneLight);
+  }
+  box('Зубец стены',-20,10.5,i*2,2,1.5,1.3,stoneLight);
+  box('Зубец стены',20,10.5,i*2,2,1.5,1.3,stoneLight);
+}
+
+// Башни по четырём углам.
+function tower(x,z,r=4,h=15) {
+  cylinder('Башня',x,h/2,z,r,r,h,stoneLight,12);
+  cylinder('Пояс башни',x,h*0.64,z,r+0.18,r+0.18,0.5,darkStone,12);
+  cylinder('Крыша башни',x,h+1.1,z,r+0.5,0.2,3,
+    mat(0x39484a),12);
+  cylinder('Площадка башни',x,h,z,r+0.25,r+0.25,0.4,darkStone,12);
+  for(let i=0;i<8;i++) {
+    const a=i/8*Math.PI*2;
+    box('Зубец башни',
+      x+Math.cos(a)*(r-0.1),h+0.9,z+Math.sin(a)*(r-0.1),
+      0.8,1.2,0.8,stone);
+  }
+  for(let y=4;y<h-2;y+=3.5) {
+    const w=box('Окно башни',x+r*Math.cos(0),y,z-0.03,
+      0.12,1.2,0.65,glass,{solid:false});
+    w.position.x=x+r-0.05;
+  }
+}
+tower(-19,-19,3.5,14);
+tower(19,-19,3.5,16);
+tower(-19,19,3.5,13);
+tower(19,19,3.5,15);
+
+// Центральный донжон.
+wall(0,5,-9,23,10,2);
+wall(-11.5,5,1,2,10,20);
+wall(11.5,5,1,2,10,20);
+wall(-5,5,11,13,10,2);
+wall(7.5,5,11,8,10,2);
+
+// Северный фасад главного здания с дверным проёмом.
+wall(-7,5,-13,9,10,2);
+wall(7,5,-13,9,10,2);
+wall(0,9,-13,5,2,2,stoneLight);
+
+// Верхние этажи донжона.
+wall(0,14,-5,23,8,19,stone);
+wall(-11.5,14,1,2,8,17,stone);
+wall(11.5,14,1,2,8,17,stone);
+wall(0,14,10,23,8,2,stone);
+
+const roofMat=mat(0x485255);
+for(const [x,z] of [[-8,-10],[8,-10],[-8,8],[8,8]]) {
+  const roof=new THREE.Mesh(
+    new THREE.ConeGeometry(4,5,4),roofMat);
+  roof.position.set(x,20,z);
+  roof.rotation.y=Math.PI/4;
+  roof.castShadow=true;
+  scene.add(roof);
+}
+
+// Внутренний двор: колодец.
+cylinder('Колодец',0,0.5,3,1.5,1.8,1,darkStone,12);
+cylinder('Колодец внутри',0,0.96,3,1.05,1.05,0.04,
+  mat(0x172a31),12);
+for(let i=0;i<8;i++) {
+  const a=i/8*Math.PI*2;
+  box('Колодец: камень',Math.cos(a)*1.35,1.1,3+Math.sin(a)*1.35,
+    0.55,0.5,0.55,stoneLight);
+}
+box('Колодец: балка',0,2.4,3,3.8,0.25,0.25,wood);
+cylinder('Колодец: вал',0,2.0,3,0.12,0.12,1.6,wood);
+box('Колодец: крыша',0,3.3,3,4,0.2,2.6,woodLight);
+
+// Каменные дорожки во дворе.
+for(let i=0;i<9;i++) {
+  for(let j=0;j<9;j++) {
+    const x=-16+i*4,z=-16+j*4;
+    if(Math.abs(x)<3 && Math.abs(z)<3) continue;
+    box('Плитка двора',x,-0.005,z,3.7,0.035,3.7,
+      mat((i+j)%3===0?0x88877d:0x777970),{solid:false});
+  }
+}
+
+/* =====================================================
+   4. ИНТЕРЬЕР: КОРИДОРЫ, КОМНАТЫ И БИБЛИОТЕКА
+===================================================== */
+
+// В донжон можно войти с юга через центральный проём.
+// Коридор.
+floor(0,6,20,8,mat(0x565650));
+floor(0,-1,20,8,mat(0x65645c));
+
+// Библиотека, восточное крыло.
+floor(7,1,7,15,mat(0x514b43));
+wall(3.5,2,1,0.5,4,15,darkStone);
+wall(10.5,2,1,0.5,4,15,darkStone);
+wall(7,2,-6.5,7,4,0.5,darkStone);
+wall(7,2,8.5,7,4,0.5,darkStone);
+
+// Полки с книгами.
+const bookColors=[
+  mat(0x74483d),mat(0x526552),mat(0x897349),
+  mat(0x3d5063),mat(0x6e555d)
+];
+for(let row=0;row<3;row++) {
+  box('Книжная полка',7,0.8+row*1.15,-5,5.8,0.95,0.35,wood);
+  for(let i=0;i<14;i++) {
+    const b=box('Старая книга',4.5+i*0.38,1.2+row*1.15,-5.0,
+      0.26,0.65+Math.random()*0.2,0.28,
+      bookColors[i%bookColors.length],{solid:false});
+    b.rotation.z=(Math.random()-0.5)*0.08;
+  }
+}
+
+// Западное крыло: оружейная.
+floor(-7,1,7,15,mat(0x504c46));
+wall(-3.5,2,1,0.5,4,15,darkStone);
+wall(-10.5,2,1,0.5,4,15,darkStone);
+wall(-7,2,-6.5,7,4,0.5,darkStone);
+wall(-7,2,8.5,7,4,0.5,darkStone);
+
+for(let z=-4;z<=6;z+=3) {
+  box('Оружейная стойка',-9,1.6,z,0.4,3,0.4,wood);
+  for(let i=0;i<2;i++) {
+    const blade=box('Старинный меч',-8.5+i*0.8,1.8,z,0.12,2,0.12,metal,
+      {solid:false});
+    blade.rotation.z=0.12;
+    sphere('Навершие меча',-8.5+i*0.8,0.8,z,0.15,gold);
+  }
+}
+
+// Восточная лестница на второй этаж.
+for(let i=0;i<13;i++) {
+  box('Ступень лестницы',9,0.25+i*0.28,6-i*0.65,
+    3,0.35,1.1,wood);
+}
+
+// Галерея второго этажа.
+box('Галерея',7,4.3,0,6,0.4,15,wood);
+box('Перила галереи',7,4.9,7,6,0.8,0.2,woodLight);
+box('Перила галереи',7,4.9,-7,6,0.8,0.2,woodLight);
+
+// Декоративные арки во дворе.
+for(let x=-12;x<=12;x+=4) {
+  box('Арка: стойка',x,3,15,0.5,6,0.5,stoneLight);
+  box('Арка: перемычка',x,6,15,4.2,0.5,0.6,stoneLight);
+}
+
+// Кровать в покоях.
+box('Кровать',0,0.6,-3,3.5,0.6,4,wood);
+box('Матрас',0,1.0,-3,3.1,0.35,3.6,
+  mat(0x686c6a));
+box('Подушка',0,1.3,-4.2,1.2,0.25,0.65,
+  mat(0xc1b8a1));
+box('Стол',-3,1,-3,2.5,0.25,1.5,woodLight);
+for(const x of [-4,-2]) for(const z of [-3.5,-2.5])
+  box('Ножка стола',x,0.45,z,0.15,1,0.15,wood);
+
+/* =====================================================
+   5. ДВЕРИ И ВЗАИМОДЕЙСТВИЯ
+===================================================== */
+
+function addDoor(name,x,y,z,width,height,rotation=0,locked=false) {
+  const pivot=new THREE.Group();
+  pivot.position.set(x-width/2,y,z);
+  pivot.rotation.y=rotation;
+  scene.add(pivot);
+
+  const leaf=new THREE.Mesh(boxGeo,woodLight);
+  leaf.scale.set(width,height,0.24);
+  leaf.position.set(width/2,height/2,0);
+  leaf.castShadow=true;
+  leaf.receiveShadow=true;
+  pivot.add(leaf);
+
+  const panelMat=wood;
+  for(const side of [-1,1]) {
+    const panel=new THREE.Mesh(boxGeo,panelMat);
+    panel.scale.set(width*0.36,height*0.72,0.04);
+    panel.position.set(width/2,height/2,side*0.14);
+    pivot.add(panel);
+  }
+
+  for(const yy of [0.4,height-0.4]) {
+    const hinge=cylinder('Петля',0,yy,0,0.08,0.08,0.24,metal);
+    pivot.add(hinge);
+  }
+
+  const handle=new THREE.Mesh(sphereGeo,gold);
+  handle.scale.set(0.1,0.1,0.1);
+  handle.position.set(width*0.8,height*0.5,0.18);
+  pivot.add(handle);
+
+  const d={
+    type:'door',name,object:leaf,pivot,
+    opened:false,locked,width,height,
+    closedRotation:rotation,
+    targetRotation:rotation,
+    interactionPos:new THREE.Vector3(x,y+1,z),
+    update(dt) {
+      const target=this.opened ? rotation+Math.PI/2 : rotation;
+      this.pivot.rotation.y +=
+        (target-this.pivot.rotation.y)*Math.min(1,dt*4);
+    }
+  };
+  animatedDoors.push(d);
+  interactables.push(d);
+  return d;
+}
+
+// Главные двери.
+addDoor('Главные ворота',-2,0,20,4,6,0,false);
+
+// Внутренние двери между помещениями.
+addDoor('Дверь библиотеки',3.5,0,2,2.4,3,Math.PI/2,false);
+addDoor('Дверь оружейной',-3.5,0,2,2.4,3,Math.PI/2,false);
+addDoor('Дверь сокровищницы',0,0,-7,3,4,0,true);
+
+// Сокровищница: отдельная комната за северной дверью.
+floor(0,-10,10,6,mat(0x494840));
+wall(-5,2,-10,0.5,4,6,darkStone);
+wall(5,2,-10,0.5,4,6,darkStone);
+wall(0,2,-13,10,4,0.5,darkStone);
+
+// Сундук.
+box('Сундук',0,0.65,-10,2.3,1.2,1.5,wood);
+box('Крышка сундука',0,1.35,-10,2.4,0.25,1.6,woodLight);
+box('Замок сундука',0,1.1,-9.18,0.35,0.4,0.12,gold);
+
+// Объекты взаимодействия.
+function addPickup(name,x,y,z,type,description) {
+  const g=new THREE.Group();
+  g.position.set(x,y,z);
+  scene.add(g);
+
+  let obj;
+  if(type==='key') {
+    obj=cylinder('Золотой ключ',0,0,0,0.09,0.09,0.65,gold,8);
+    obj.rotation.z=Math.PI/2;
+    sphere('Головка ключа',-0.35,0,0,0.17,gold);
+    for(let i=0;i<2;i++)
+      box('Зубец ключа',0.2+i*0.12,-0.09,0,0.08,0.2,0.08,gold);
+  } else if(type==='relic') {
+    obj=new THREE.Mesh(new THREE.OctahedronGeometry(0.42),gold);
+    obj.castShadow=true;
+    g.add(obj);
+    obj.position.y=0.15;
+    const glow=new THREE.PointLight(0xe9bb64,1.4,5);
+    glow.position.y=0.3;
+    g.add(glow);
+  } else if(type==='note') {
+    obj=box('Записка',0,0,0,0.7,0.06,0.9,
+      mat(0xd0c3a2),{solid:false});
+  }
+
+  g.userData={type,name,description,collected:false};
+  interactables.push({
+    type:'pickup',name,object:g,group:g,
+    interactionPos:g.position,
+    description,
+    pickupType:type
+  });
+  pickups.push(g);
+  return g;
+}
+
+// Ключ у колодца, реликвии и записки.
+addPickup('Ключ смотрителя',2,1.7,3,'key',
+  'Старый ключ. Похоже, он подходит к сокровищнице.');
+addPickup('Первая реликвия',-7,1.8,-2,'relic',
+  'Древняя печать королевства. Первая из забытых реликвий.');
+addPickup('Записка библиотекаря',7,1.4,-4,'note',
+  '«Когда последняя свеча погаснет, не ищи короля в тронном зале. Он всё ещё ждёт у колодца».');
+addPickup('Вторая реликвия',0,1.8,-10,'relic',
+  'Королевский медальон. Теперь сокровищница больше не кажется пустой.');
+
+// Сундук.
+interactables.push({
+  type:'chest',
+  name:'Старинный сундук',
+  object:scene.getObjectByName('Сундук'),
+  interactionPos:new THREE.Vector3(0,1,-10),
+  opened:false
+});
+
+// Факелы и источники света.
+function torch(x,y,z) {
+  const holder=cylinder('Факел',x,y,z,0.09,0.13,1.0,wood);
+  const flame=sphere('Огонь факела',x,y+0.65,z,0.22,
+    new THREE.MeshStandardMaterial({
+      color:0xffb34e,emissive:0xff7622,emissiveIntensity:3
+    }));
+  flame.scale.set(0.7,1.4,0.7);
+
+  const light=new THREE.PointLight(0xffa04d,3.5,11,2);
+  light.position.set(x,y+0.8,z);
+  scene.add(light);
+  flickerLights.push({light,flame,phase:Math.random()*10});
+}
+
+[
+  [-18,4,-10],[-18,4,10],[18,4,-10],[18,4,10],
+  [-8,3,19],[8,3,19],[0,3,19],
+  [-2,2,-1],[2,2,-1],[5,2,-4],[-9,2,-4],
+  [-2,2,-11],[2,2,-11]
+].forEach(p=>torch(...p));
+
+/* =====================================================
+   6. ИГРОК И КАМЕРА
+===================================================== */
+
+const player={
+  position:new THREE.Vector3(0,1.7,28),
+  velocityY:0,
+  yaw:Math.PI,
+  pitch:0,
+  speed:6.5,
+  radius:0.38,
+  height:1.7,
+  grounded:true
+};
+
+camera.position.copy(player.position);
+
+const keys={};
+let joystickX=0,joystickY=0;
+let lookPointer=null;
+let lastLookX=0,lastLookY=0;
+let started=false;
+let jumpRequested=false;
+let keyCount=0;
+let relicCount=0;
+let currentTarget=null;
+let messageTimer=0;
+
+function showMessage(text,duration=3) {
+  const el=document.getElementById('message');
+  el.textContent=text;
+  el.style.display='block';
+  messageTimer=duration;
+}
+
+function isBlocked(x,z,y=0) {
+  const r=player.radius;
+  for(const c of colliders) {
+    if(y+player.height<c.minY || y>c.maxY) continue;
+    if(x+r>c.minX && x-r<c.maxX &&
+       z+r>c.minZ && z-r<c.maxZ) return true;
+  }
+  return false;
+}
+
+function movePlayer(dx,dz) {
+  // Раздельные оси позволяют скользить вдоль стен.
+  const nx=player.position.x+dx;
+  if(!isBlocked(nx,player.position.z,player.position.y-1.7))
+    player.position.x=nx;
+
+  const nz=player.position.z+dz;
+  if(!isBlocked(player.position.x,nz,player.position.y-1.7))
+    player.position.z=nz;
+
+  // Граница исследуемой области.
+  player.position.x=THREE.MathUtils.clamp(player.position.x,-87,87);
+  player.position.z=THREE.MathUtils.clamp(player.position.z,-87,87);
+}
+
+function updateCamera() {
+  camera.position.copy(player.position);
+  camera.rotation.order='YXZ';
+  camera.rotation.y=player.yaw;
+  camera.rotation.x=player.pitch;
+}
+
+/* =====================================================
+   7. МОБИЛЬНОЕ УПРАВЛЕНИЕ
+===================================================== */
+
+const joy=document.getElementById('joy');
+const knob=document.getElementById('knob');
+
+let joyPointer=null;
+
+function setJoy(e) {
+  const r=joy.getBoundingClientRect();
+  const cx=r.left+r.width/2,cy=r.top+r.height/2;
+  let dx=e.clientX-cx,dy=e.clientY-cy;
+  const max=40;
+  const len=Math.hypot(dx,dy);
+  if(len>max) {dx=dx/len*max;dy=dy/len*max;}
+  joystickX=dx/max;
+  joystickY=dy/max;
+  knob.style.transform=`translate(${dx}px,${dy}px)`;
+}
+
+function releaseJoy() {
+  joyPointer=null;
+  joystickX=0;
+  joystickY=0;
+  knob.style.transform='translate(0,0)';
+}
+
+joy.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  joyPointer=e.pointerId;
+  joy.setPointerCapture(e.pointerId);
+  setJoy(e);
+});
+joy.addEventListener('pointermove',e=>{
+  if(e.pointerId===joyPointer) setJoy(e);
+});
+joy.addEventListener('pointerup',releaseJoy);
+joy.addEventListener('pointercancel',releaseJoy);
+
+renderer.domElement.addEventListener('pointerdown',e=>{
+  if(!started) return;
+  if(e.pointerType==='mouse') {
+    if(document.pointerLockElement!==renderer.domElement)
+      renderer.domElement.requestPointerLock?.();
+    return;
+  }
+  if(e.clientX<innerWidth*0.4) return;
+  lookPointer=e.pointerId;
+  lastLookX=e.clientX;
+  lastLookY=e.clientY;
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+
+renderer.domElement.addEventListener('pointermove',e=>{
+  if(e.pointerType==='mouse' &&
+     document.pointerLockElement===renderer.domElement) {
+    player.yaw-=e.movementX*0.0025;
+    player.pitch-=e.movementY*0.0025;
+    player.pitch=THREE.MathUtils.clamp(player.pitch,-1.45,1.45);
+    return;
+  }
+  if(e.pointerId!==lookPointer) return;
+  const dx=e.clientX-lastLookX;
+  const dy=e.clientY-lastLookY;
+  lastLookX=e.clientX;
+  lastLookY=e.clientY;
+  player.yaw-=dx*0.006;
+  player.pitch-=dy*0.005;
+  player.pitch=THREE.MathUtils.clamp(player.pitch,-1.45,1.45);
+});
+function stopLook(e) {
+  if(e.pointerId===lookPointer) lookPointer=null;
+}
+renderer.domElement.addEventListener('pointerup',stopLook);
+renderer.domElement.addEventListener('pointercancel',stopLook);
+
+document.addEventListener('mousemove',e=>{
+  if(document.pointerLockElement===renderer.domElement) {
+    player.yaw-=e.movementX*0.0025;
+    player.pitch-=e.movementY*0.0025;
+    player.pitch=THREE.MathUtils.clamp(player.pitch,-1.45,1.45);
+  }
+});
+
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))
+    e.preventDefault();
+  if(e.code==='KeyE' && started) interact();
+  if(e.code==='Space' && started) jumpRequested=true;
+});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+
+document.getElementById('jump').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  jumpRequested=true;
+});
+document.getElementById('interact').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  interact();
+});
+
+document.getElementById('begin').addEventListener('click',()=>{
+  started=true;
+  document.getElementById('start').style.display='none';
+  showMessage('Добро пожаловать. Замок давно не видел гостей.',4);
+  if(matchMedia('(hover:hover) and (pointer:fine)').matches)
+    renderer.domElement.requestPointerLock?.();
+});
+
+/* =====================================================
+   8. ПОИСК ОБЪЕКТОВ И ВЗАИМОДЕЙСТВИЕ
+===================================================== */
+
+const raycaster=new THREE.Raycaster();
+raycaster.far=3.6;
+
+function findTarget() {
+  const direction=new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  raycaster.set(camera.position,direction);
+
+  const objects=[];
+  for(const item of interactables) {
+    if(item.type==='door') {
+      objects.push(item.object);
+    } else if(item.group) {
+      objects.push(item.group);
+    } else if(item.object) {
+      objects.push(item.object);
+    }
+  }
+
+  const hits=raycaster.intersectObjects(objects,true);
+  if(!hits.length) return null;
+
+  let node=hits[0].object;
+  while(node) {
+    const found=interactables.find(i=>
+      i.object===node || i.group===node ||
+      (i.type==='door' && i.pivot===node)
+    );
+    if(found) return found;
+    node=node.parent;
+  }
+  return null;
+}
+
+function interact() {
+  if(!started) return;
+  const target=findTarget();
+  if(!target) {
+    showMessage('Здесь нечего трогать. Пока что.',1.5);
+    return;
+  }
+
+  if(target.type==='door') {
+    if(target.locked && keyCount===0) {
+      showMessage('Дверь заперта. Нужен ключ смотрителя.');
+      return;
+    }
+    if(target.locked) {
+      target.locked=false;
+      keyCount--;
+      document.getElementById('keys').textContent=keyCount;
+      showMessage('Ключ повернулся в замке. Дверь открыта.');
+    } else {
+      showMessage(target.opened?'Ты закрыла дверь.':'Старая дверь медленно открывается.');
+    }
+    target.opened=!target.opened;
+    return;
+  }
+
+  if(target.type==='pickup') {
+    if(target.group.userData.collected) return;
+    target.group.userData.collected=true;
+    scene.remove(target.group);
+
+    if(target.pickupType==='key') {
+      keyCount++;
+      document.getElementById('keys').textContent=keyCount;
+    }
+    if(target.pickupType==='relic') {
+      relicCount++;
+      document.getElementById('count').textContent=relicCount;
+    }
+    showMessage(target.description,4);
+    return;
+  }
+
+  if(target.type==='chest') {
+    if(target.opened) {
+      showMessage('Сундук пуст. Даже средневековые сокровища не бесконечны.');
+      return;
+    }
+    target.opened=true;
+    const lid=scene.getObjectByName('Крышка сундука');
+    if(lid) lid.rotation.x=-0.9;
+    showMessage('Сундук открыт. Ты нашла следы старого королевства.',4);
+  }
+}
+
+/* =====================================================
+   9. ОБНОВЛЕНИЕ ИГРОВОГО МИРА
+===================================================== */
+
+const clock=new THREE.Clock();
+let elapsed=0;
+
+function update(dt) {
+  elapsed+=dt;
+
+  if(messageTimer>0) {
+    messageTimer-=dt;
+    if(messageTimer<=0)
+      document.getElementById('message').style.display='none';
+  }
+
+  // Управление движением относительно направления взгляда.
+  let forward=0,strafe=0;
+  if(keys.KeyW || keys.ArrowUp) forward+=1;
+  if(keys.KeyS || keys.ArrowDown) forward-=1;
+  if(keys.KeyD || keys.ArrowRight) strafe+=1;
+  if(keys.KeyA || keys.ArrowLeft) strafe-=1;
+
+  forward+=-joystickY;
+  strafe+=joystickX;
+
+  const length=Math.hypot(forward,strafe);
+  if(length>1) {forward/=length;strafe/=length;}
+
+  const sin=Math.sin(player.yaw),cos=Math.cos(player.yaw);
+  const speed=player.speed*dt;
+  const dx=(-sin*forward+cos*strafe)*speed;
+  const dz=(-cos*forward-sin*strafe)*speed;
+
+  movePlayer(dx,dz);
+
+  // Прыжок с гравитацией.
+  if(jumpRequested && player.grounded) {
+    player.velocityY=6;
+    player.grounded=false;
+  }
+  jumpRequested=false;
+  player.velocityY-=15*dt;
+  player.position.y+=player.velocityY*dt;
+
+  if(player.position.y<=1.7) {
+    player.position.y=1.7;
+    player.velocityY=0;
+    player.grounded=true;
+  }
+
+  updateCamera();
+
+  // Плавное движение дверей.
+  for(const d of animatedDoors) d.update(dt);
+
+  // Плавающие реликвии.
+  for(const p of pickups) {
+    if(p.parent===null || p.userData.collected) continue;
+    p.rotation.y+=dt*0.6;
+    p.position.y+=Math.sin(elapsed*1.7+p.position.x)*dt*0.13;
+  }
+
+  // Небольшое мерцание факелов.
+  for(const f of flickerLights) {
+    f.light.intensity=3.0+Math.sin(elapsed*8+f.phase)*0.45+
+      Math.sin(elapsed*13+f.phase)*0.25;
+    f.flame.scale.y=1.4+Math.sin(elapsed*10+f.phase)*0.15;
+  }
+
+  currentTarget=findTarget();
+  const hint=document.getElementById('hint');
+  if(currentTarget) {
+    hint.style.display='block';
+    let label=currentTarget.name;
+    if(currentTarget.type==='door') {
+      label+=currentTarget.locked && keyCount===0
+        ?' · ЗАПЕРТО'
+        :(currentTarget.opened?' · ЗАКРЫТЬ':' · ОТКРЫТЬ');
+    } else if(currentTarget.type==='pickup') {
+      label+=' · ПОДОБРАТЬ';
+    } else if(currentTarget.type==='chest') {
+      label+=' · ОСМОТРЕТЬ';
+    }
+    hint.textContent=label+'  [E]';
+  } else {
+    hint.style.display='none';
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.04);
+  if(started) update(dt);
+  renderer.render(scene,camera);
+}
+
+animate();
+
+/* =====================================================
+   10. АДАПТАЦИЯ ПОД ЭКРАН
+===================================================== */
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+</script>
+</body>
+</html>
