@@ -3,1013 +3,739 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>The Forgotten Kingdom</title>
-
 <style>
-* { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #111820;
-  font-family: Georgia, serif;
-  color: #f2e9d4;
-  touch-action: none;
-}
-canvas { display: block; }
-#ui { position: fixed; inset: 0; pointer-events: none; }
-.panel {
-  background: linear-gradient(135deg, rgba(17,26,35,.91), rgba(36,39,43,.83));
-  border: 1px solid rgba(207,174,112,.5);
-  box-shadow: 0 5px 25px #0008;
-  border-radius: 9px;
-  padding: 10px 13px;
-}
-#title {
-  position:absolute; top:12px; left:50%; transform:translateX(-50%);
-  text-align:center; letter-spacing:3px; font-size:14px;
-  color:#e9d4a6; white-space:nowrap;
-}
-#status { position:absolute; top:12px; left:12px; font-size:12px; }
-#mapButton {
-  position:absolute; top:12px; right:12px; pointer-events:auto;
-  border:1px solid #c9a76b; background:#17222cdd; color:#f0dfba;
-  border-radius:8px; padding:10px 14px; font-family:Georgia;
-}
-#hint {
-  position:absolute; bottom:22%; left:50%; transform:translateX(-50%);
-  text-align:center; min-width:210px; max-width:85%;
-  font-size:14px; color:#f1dfb9; display:none;
-}
-#message {
-  position:absolute; top:17%; left:50%; transform:translateX(-50%);
-  max-width:85%; text-align:center; font-size:15px;
-  color:#f3dfb4; display:none;
-}
-#crosshair {
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:5px; height:5px; border:1px solid #eee9; border-radius:50%;
-}
-#controls { position:absolute; inset:0; }
-#stick {
-  position:absolute; left:25px; bottom:28px; width:112px; height:112px;
-  border:1px solid #d3bd8a88; border-radius:50%;
-  background:#18232a88; pointer-events:auto;
-}
-#nub {
-  position:absolute; width:43px; height:43px; border-radius:50%;
-  background:#c7ad7b99; border:1px solid #e7d6ae;
-  left:34px; top:34px;
-}
-.action {
-  position:absolute; right:22px; bottom:34px; pointer-events:auto;
-  width:65px; height:65px; border-radius:50%;
-  border:1px solid #d6bd83; background:#24323bd9;
-  color:#f3dfb4; font-size:12px; font-family:Georgia;
-}
-#jump { right:99px; bottom:105px; width:52px; height:52px; }
-#run { right:27px; bottom:111px; width:52px; height:52px; }
-#mapScreen {
-  position:absolute; inset:6%; display:none; pointer-events:auto;
-  background:#111c23f5; border:1px solid #c7a56d;
-  border-radius:12px; padding:14px; overflow:auto;
-}
-#mapScreen h2 { text-align:center; font-weight:normal; color:#e6c98e; }
-#mapCanvas {
-  width:100%; max-width:500px; aspect-ratio:1;
-  display:block; margin:10px auto; background:#25333a;
-  border:1px solid #7e735b;
-}
-#closeMap {
-  display:block; margin:12px auto; padding:9px 24px;
-  background:#34424a; color:#f2dfb8; border:1px solid #b99b66;
-  border-radius:7px; font-family:Georgia;
-}
-#inventory {
-  position:absolute; left:12px; bottom:12px; font-size:11px;
-  max-width:145px; line-height:1.5;
-}
-#legend { text-align:center; font-size:12px; color:#c9bea6; }
-@media (hover:hover) and (pointer:fine) {
-  #controls { display:none; }
-}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17212a;color:#f3e5c6;font-family:Georgia,serif;touch-action:none}
+canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+#title{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:13px;letter-spacing:3px;color:#f0d7a4;text-shadow:0 2px 8px #000;white-space:nowrap}
+#location{position:absolute;top:37px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:2px;color:#e4d5b8}
+.panel{background:#14212be8;border:1px solid #b99a62;border-radius:7px;box-shadow:0 4px 18px #0008}
+#mapButton,#bagButton{position:absolute;top:12px;right:12px;pointer-events:auto;padding:9px 12px;background:#17232c;color:#f1dfb9;border:1px solid #b99a62;border-radius:6px;font-family:Georgia}
+#bagButton{right:83px}
+#hint{position:absolute;bottom:22%;left:50%;transform:translateX(-50%);display:none;text-align:center;padding:10px 15px;max-width:86%;font-size:13px}
+#message{position:absolute;top:16%;left:50%;transform:translateX(-50%);display:none;text-align:center;padding:12px 16px;max-width:85%;font-size:14px}
+#crosshair{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 5px #fff}
+#mapPanel,#bagPanel{position:absolute;inset:7%;display:none;pointer-events:auto;padding:14px;overflow:auto}
+#mapPanel h2,#bagPanel h2{text-align:center;font-size:18px;font-weight:normal;letter-spacing:3px}
+#mapCanvas{width:100%;max-width:480px;aspect-ratio:1;display:block;margin:auto;background:#283b39;border:1px solid #b99a62}
+.close{display:block;margin:12px auto;padding:9px 20px;background:#263741;border:1px solid #b99a62;color:#f1dfb9;font-family:Georgia}
+#mapLegend{text-align:center;font-size:11px;line-height:1.8;color:#d0c3a7}
+#stick{position:absolute;left:23px;bottom:25px;width:112px;height:112px;border:1px solid #e4d3a477;background:#17232b77;border-radius:50%;pointer-events:auto;touch-action:none}
+#nub{position:absolute;left:34px;top:34px;width:42px;height:42px;border-radius:50%;background:#c4a66d99;border:1px solid #f0d9a8}
+#lookArea{position:absolute;right:0;top:17%;width:52%;height:60%;pointer-events:auto;touch-action:none}
+#buttons{position:absolute;right:20px;bottom:28px;display:flex;flex-direction:column;gap:9px;pointer-events:auto}
+.ctrl{width:58px;height:48px;border-radius:50%;border:1px solid #d6bd88;background:#17252ddd;color:#f4e8cf;font:11px Georgia;touch-action:none}
+#jump{width:48px;height:48px;align-self:flex-start}
+#help{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);font-size:9px;color:#d5c5a3;white-space:nowrap}
+@media(hover:hover) and (pointer:fine){#stick,#lookArea,#buttons,#help{display:none}}
 </style>
 </head>
-
 <body>
-<div id="ui">
+<div id="hud">
   <div id="title">THE FORGOTTEN KINGDOM</div>
-  <div id="status" class="panel">День I · Исследование</div>
+  <div id="location">ROYAL COURTYARD</div>
+  <button id="bagButton">СУМКА</button>
   <button id="mapButton">КАРТА</button>
   <div id="crosshair"></div>
   <div id="hint" class="panel"></div>
   <div id="message" class="panel"></div>
-  <div id="inventory" class="panel">Инвентарь: пусто</div>
 
-  <div id="controls">
-    <div id="stick"><div id="nub"></div></div>
-    <button id="jump" class="action">ПРЫЖОК</button>
-    <button id="run" class="action">БЕГ</button>
-    <button id="interact" class="action">ДЕЙСТВИЕ</button>
-  </div>
-
-  <div id="mapScreen" class="panel">
+  <div id="mapPanel" class="panel">
     <h2>КАРТА КОРОЛЕВСТВА</h2>
-    <canvas id="mapCanvas" width="500" height="500"></canvas>
-    <div id="legend">Неизведанное · Исследованное · Ваша позиция</div>
-    <button id="closeMap">ЗАКРЫТЬ</button>
+    <canvas id="mapCanvas" width="480" height="480"></canvas>
+    <div id="mapLegend">Серое — неизвестно · Цветное — исследовано<br>Золотая точка — твоё местоположение</div>
+    <button class="close" id="closeMap">ЗАКРЫТЬ</button>
   </div>
+
+  <div id="bagPanel" class="panel">
+    <h2>ИНВЕНТАРЬ</h2>
+    <div id="items">Пока пусто.</div>
+    <button class="close" id="closeBag">ЗАКРЫТЬ</button>
+  </div>
+
+  <div id="stick"><div id="nub"></div></div>
+  <div id="lookArea"></div>
+  <div id="buttons">
+    <button class="ctrl" id="run">БЕГ</button>
+    <button class="ctrl" id="jump">ПРЫЖОК</button>
+    <button class="ctrl" id="act">ДЕЙСТВИЕ</button>
+  </div>
+  <div id="help">ДЖОЙСТИК — ДВИЖЕНИЕ · ПРАВАЯ СТОРОНА — ОБЗОР</div>
 </div>
 
 <script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-  }
-}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
 </script>
 
 <script type="module">
 import * as THREE from "three";
 
-/* =========================
-   ОСНОВА ИГРЫ
-========================= */
+/* ===== ОСНОВА ===== */
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x9eafba);
-scene.fog = new THREE.FogExp2(0x9eafba, 0.0035);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9aabb7);
+scene.fog=new THREE.Fog(0x9aabb7,100,260);
 
-const camera = new THREE.PerspectiveCamera(
-  76, innerWidth / innerHeight, 0.1, 500
-);
-camera.position.set(0, 1.7, 0);
+const camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.1,500);
+camera.rotation.order="YXZ";
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  powerPreference: "high-performance"
-});
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.18;
 document.body.appendChild(renderer.domElement);
 
-const clock = new THREE.Clock();
+const clock=new THREE.Clock();
 
-const mats = {};
-function material(name, color, roughness=0.85, metalness=0) {
-  mats[name] = new THREE.MeshStandardMaterial({
-    color, roughness, metalness
-  });
-  return mats[name];
+const mats={};
+function M(n,c,r=.85,metal=0){
+  mats[n]=new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:metal});
 }
+M("ground",0x65784d); M("grass",0x75865a); M("stone",0xb7ad99);
+M("pale",0xd1c4a8); M("shadowStone",0x60636a); M("floor",0x887b68);
+M("wood",0x69462f); M("darkWood",0x38291f); M("gold",0xc6a15b,.32,.55);
+M("roof",0x3c4e5c); M("roofRed",0x713d3b); M("blue",0x344d6b);
+M("red",0x873e42); M("glass",0x83b3c1,.2,.35); M("water",0x477b91,.18,.25);
+M("leaf",0x35553a); M("leaf2",0x647d4d); M("iron",0x515a60,.45,.65);
+M("marble",0xd8d0bd,.35); M("sand",0xb7a17d);
 
-material("stone", 0xaaa18e);
-material("lightStone", 0xc6b99d);
-material("darkStone", 0x55545a);
-material("floor", 0x786c5d);
-material("wood", 0x593b2b);
-material("darkWood", 0x30251e);
-material("gold", 0xc29b50, 0.35, 0.55);
-material("blue", 0x344b66);
-material("cloth", 0x8c3840);
-material("grass", 0x526b46);
-material("grass2", 0x75835a);
-material("water", 0x416f82, 0.2, 0.25);
-material("leaf", 0x3d6244);
-material("leaf2", 0x62784b);
-material("roof", 0x49444b);
-material("glass", 0x8cb7c7, 0.2, 0.25);
-material("iron", 0x454b50, 0.4, 0.7);
-
-const colliders = [];
-const interactables = [];
-const explored = new Set();
-const inventory = [];
-const doors = [];
-let currentHint = null;
-let nearbyObject = null;
-let messageTimer = 0;
-let isRunning = false;
-let jumpVelocity = 0;
-let grounded = true;
-let yaw = 0;
-let pitch = 0;
-let mapOpen = false;
-let runeProgress = 0;
-let puzzleSolved = false;
-
-const player = {
-  x: 0, y: 1.7, z: 28,
-  radius: 0.32
-};
-
-const ui = {
-  hint: document.getElementById("hint"),
-  message: document.getElementById("message"),
-  inventory: document.getElementById("inventory"),
-  map: document.getElementById("mapScreen"),
-  mapCanvas: document.getElementById("mapCanvas")
-};
-
-function box(x,y,z,w,h,d,mat,solid=false, parent=scene) {
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(w,h,d), mat
-  );
-  mesh.position.set(x,y+h/2,z);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  parent.add(mesh);
-  if (solid) colliders.push({x,z,w,d});
-  return mesh;
-}
-
-function sphere(x,y,z,r,mat,parent=scene) {
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(r,16,12), mat
-  );
-  mesh.position.set(x,y,z);
-  mesh.castShadow = true;
-  parent.add(mesh);
-  return mesh;
-}
-
-function cylinder(x,y,z,r1,r2,h,mat,parent=scene) {
-  const mesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(r1,r2,h,12),mat
-  );
-  mesh.position.set(x,y+h/2,z);
-  mesh.castShadow = true;
-  parent.add(mesh);
-  return mesh;
-}
-
-function ground(x,z,w,d,mat) {
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(w,0.3,d), mat
-  );
-  mesh.position.set(x,-0.16,z);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
-  return mesh;
-}
-
-function wall(x,z,w,d,h=4,mat=mats.stone) {
-  return box(x,h/2,z,w,h,d,mat,true);
-}
-
-/* =========================
-   ОСВЕЩЕНИЕ
-========================= */
-
-scene.add(new THREE.HemisphereLight(0xc5d9e6,0x4c4030,1.3));
-
-const sun = new THREE.DirectionalLight(0xffe2b1,2.0);
-sun.position.set(-45,65,35);
-sun.castShadow = true;
+scene.add(new THREE.HemisphereLight(0xd5e5f1,0x554331,1.55));
+const sun=new THREE.DirectionalLight(0xffe3bd,2.1);
+sun.position.set(-55,90,40);
+sun.castShadow=true;
 sun.shadow.mapSize.set(1024,1024);
-sun.shadow.camera.left = -90;
-sun.shadow.camera.right = 90;
-sun.shadow.camera.top = 90;
-sun.shadow.camera.bottom = -90;
+sun.shadow.camera.left=-100;sun.shadow.camera.right=100;
+sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;
 scene.add(sun);
 
-function torch(x,y,z) {
-  const holder = new THREE.Group();
-  holder.position.set(x,y,z);
-  scene.add(holder);
+const boxGeo=new THREE.BoxGeometry(1,1,1);
+const sphereGeo=new THREE.SphereGeometry(.5,12,10);
+const cylGeo=new THREE.CylinderGeometry(.5,.5,1,12);
+const colliders=[];
+const interactables=[];
+const discovered=new Set();
+const inventory=[];
+const player={x:0,y:1.7,z:24};
+let yaw=0,pitch=0,vy=0,grounded=true;
+let joystickX=0,joystickY=0,running=false;
+let nearest=null,messageTime=0;
+let mapVisible=false,bagVisible=false;
+let runeCount=0,gateOpen=false;
 
-  cylinder(0,0,0,0.07,0.09,0.5,mats.iron,holder);
-  const flame = new THREE.Mesh(
-    new THREE.ConeGeometry(0.105,0.35,8),
-    new THREE.MeshBasicMaterial({color:0xffb13b})
-  );
-  flame.position.y=0.55;
-  holder.add(flame);
+/* ===== ГЕОМЕТРИЯ ===== */
 
-  const light = new THREE.PointLight(0xffa94d,2.2,9,2);
-  light.position.set(0,0.65,0);
-  holder.add(light);
-
-  const glow = sphere(0,0.57,0,0.07,
-    new THREE.MeshBasicMaterial({color:0xffe0a0}),holder);
-  glow.material.transparent=true;
-  return {flame,light};
+// ВАЖНО: box использует координату Y как НИЖНЮЮ точку объекта.
+function box(x,y,z,w,h,d,material,solid=true){
+  const o=new THREE.Mesh(boxGeo,material);
+  o.position.set(x,y+h/2,z);
+  o.scale.set(w,h,d);
+  o.castShadow=true;o.receiveShadow=true;
+  scene.add(o);
+  if(solid)colliders.push({x,z,w,d});
+  return o;
 }
 
-/* =========================
-   АРХИТЕКТУРА
-========================= */
+function floor(x,z,w,d,material){
+  return box(x,-.15,z,w,.3,d,material,false);
+}
 
-function room(cx,cz,w,d,options={}) {
-  const h=options.height || 4.8;
-  const thick=0.55;
-  const floorMat=options.floor || mats.floor;
-  ground(cx,cz,w,d,floorMat);
+function cylinder(x,y,z,r,h,material,solid=false){
+  const o=new THREE.Mesh(cylGeo,material);
+  o.position.set(x,y+h/2,z);
+  o.scale.set(r*2,h,r*2);
+  o.castShadow=true;o.receiveShadow=true;
+  scene.add(o);
+  if(solid)colliders.push({x,z,w:r*2,d:r*2});
+  return o;
+}
 
-  const doorWidth=options.doorWidth || 2.3;
-  const opening=options.opening || "south";
-  const wallMat=options.wall || mats.lightStone;
+function sphere(x,y,z,r,material){
+  const o=new THREE.Mesh(sphereGeo,material);
+  o.position.set(x,y,z);o.scale.set(r*2,r*2,r*2);
+  o.castShadow=true;scene.add(o);return o;
+}
 
-  wall(cx,cz-d/2,w,thick,h,wallMat);
-  wall(cx,cz+d/2,w,thick,h,wallMat);
-  wall(cx-w/2,cz,thick,d,h,wallMat);
-  wall(cx+w/2,cz,thick,d,h,wallMat);
+function wall(x,z,w,d,h=4.5,material=mats.stone){
+  return box(x,0,z,w,h,d,material,true);
+}
 
-  // Открытый дверной проём в выбранной стене
-  if(opening==="south") {
-    wall(cx-w/2+doorWidth/2,cz+d/2,w/2-doorWidth/2,thick,h,wallMat);
-    wall(cx+doorWidth/2,cz+d/2,w/2-doorWidth/2,thick,h,wallMat);
+function wallWithDoor(x,z,length,thickness,height,alongX=true,gap=2.8){
+  const part=(length-gap)/2;
+  if(alongX){
+    wall(x-(gap+part)/2,z,part,thickness,height);
+    wall(x+(gap+part)/2,z,part,thickness,height);
+    box(x,height-0.45,z,gap,.45,thickness,mats.pale,false);
+  }else{
+    wall(x,z-(gap+part)/2,thickness,part,height);
+    wall(x,z+(gap+part)/2,thickness,part,height);
+    box(x,height-.45,z,thickness,.45,gap,mats.pale,false);
   }
-  return {cx,cz,w,d};
 }
 
-function doorway(x,z,width=2.4,height=3.1) {
-  // Декоративная каменная арка
-  box(x-width/2-0.12,0.1,z,0.24,height,0.4,mats.darkStone);
-  box(x+width/2+0.12,0.1,z,0.24,height,0.4,mats.darkStone);
-  box(x,height,z,width+0.5,0.35,0.55,mats.darkStone);
-}
-
-function column(x,z,h=4) {
-  cylinder(x,h/2,z,0.32,0.38,h,mats.lightStone);
-  cylinder(x,h-0.12,z,0.48,0.48,0.24,mats.gold);
-  cylinder(x,0.05,z,0.48,0.48,0.2,mats.darkStone);
-}
-
-function arch(x,z,width=3,height=4) {
-  column(x-width/2,z,height);
-  column(x+width/2,z,height);
-  const curve = new THREE.Mesh(
-    new THREE.TorusGeometry(width/2,height*0.11,8,24,Math.PI),
-    mats.lightStone
+function torch(x,y,z){
+  cylinder(x,y,z,.09,.55,mats.iron);
+  const flame=new THREE.Mesh(
+    new THREE.ConeGeometry(.13,.34,8),
+    new THREE.MeshBasicMaterial({color:0xffa52e})
   );
-  curve.position.set(x,height,z);
-  curve.rotation.z=Math.PI;
-  scene.add(curve);
+  flame.position.set(x,y+.73,z);scene.add(flame);
+  const light=new THREE.PointLight(0xffa84f,1.8,10);
+  light.position.set(x,y+.75,z);scene.add(light);
+  return flame;
 }
 
-function banner(x,y,z,color=0x8b2637) {
-  const pole=cylinder(x,y,z,0.035,0.035,2.7,mats.gold);
-  const cloth=new THREE.Mesh(
-    new THREE.PlaneGeometry(0.9,1.5),
-    new THREE.MeshStandardMaterial({
-      color,side:THREE.DoubleSide,roughness:0.9
-    })
+function column(x,z,h=4){
+  cylinder(x,0,z,.38,h,mats.pale,true);
+  cylinder(x,h-.2,z,.53,.3,mats.gold);
+  cylinder(x,0,z,.5,.2,mats.shadowStone);
+}
+
+function window(x,y,z){
+  box(x,y,z,.13,1.8,.12,mats.iron,false);
+  box(x,y,z-.04,.1,1.55,.08,mats.glass,false);
+  box(x,y,z,.1,.12,2,mats.gold,false);
+}
+
+function banner(x,y,z,color){
+  cylinder(x,y,z,.035,2.8,mats.gold);
+  box(x+.48,y+1,z,.9,1.5,.08,
+    new THREE.MeshStandardMaterial({color,side:THREE.DoubleSide}),false);
+}
+
+function roof(x,z,w,d,color=mats.roof){
+  const o=new THREE.Mesh(
+    new THREE.ConeGeometry(Math.max(w,d)*.72,3,4),
+    color
   );
-  cloth.position.set(x+0.48,y-0.7,z);
-  cloth.rotation.y=Math.PI/2;
-  scene.add(cloth);
+  o.position.set(x,6,z);o.rotation.y=Math.PI/4;
+  o.castShadow=true;scene.add(o);
 }
 
-/* =========================
-   ЦЕНТРАЛЬНЫЙ ЗАМОК
-========================= */
+/* ===== ПОЛ МИРА: ЕДИНАЯ ПОВЕРХНОСТЬ ===== */
 
-// Главный двор
-ground(0,17,42,34,mats.floor);
-for(let x=-18;x<=18;x+=9) {
-  column(x,3,3.8);
-  column(x,31,3.8);
-}
-arch(-18,17,3.5,4);
-arch(18,17,3.5,4);
+floor(0,0,340,340,mats.ground);
+floor(0,24,52,45,mats.sand);
+floor(0,67,70,48,mats.sand);
+floor(0,115,7,95,mats.sand);
+floor(0,170,180,65,mats.grass);
+
+/* ===== ЗАМОК: НЕПРЕРЫВНЫЙ ПЛАН ===== */
 
 // Главный корпус
-room(0,-4,30,18,{opening:"south",height:7});
-doorway(0,5.2,3.2,4.2);
+floor(0,-22,42,40,mats.marble);
+wallWithDoor(0,-42,42,.9,9,true,4);
+wall(-21,-22,.9,40,9);
+wall(21,-22,.9,40,9);
+wallWithDoor(0,-2,42,.9,9,true,4);
 
-// Внутренние перегородки и проходы
-wall(-7,-4,0.45,9,4.5);
-wall(7,-4,0.45,9,4.5);
-wall(0,-10,12,0.4,4.5);
+// Башни по углам
+for(const x of [-20,20])for(const z of [-41,-3]){
+  cylinder(x,0,z,2.5,9,mats.shadowStone,true);
+  cylinder(x,9,z,2.1,2.4,mats.roof);
+  cylinder(x,10.7,z,1.8,1.1,mats.gold);
+}
 
-// Боковые залы
-room(-22,-4,12,18,{opening:"south"});
-room(22,-4,12,18,{opening:"south"});
-doorway(-22,5,2.4);
-doorway(22,5,2.4);
+// Внутренние стены с настоящими проёмами
+wallWithDoor(-10,-22,18,.6,5,false,3);
+wallWithDoor(10,-22,18,.6,5,false,3);
+wallWithDoor(0,-32,20,.6,5,true,3);
+wallWithDoor(-10,-12,18,.6,5,false,3);
+wallWithDoor(10,-12,18,.6,5,false,3);
 
 // Тронный зал
-ground(0,-4,13,12,mats.darkStone);
-for(let x=-5;x<=5;x+=5) {
-  column(x,-8,5.4);
-  column(x,0,5.4);
-}
-box(0,0.2,-10,5,0.5,2,mats.gold);
-box(0,0.7,-10,2.3,1.2,1.2,mats.blue);
-box(0,1.6,-10,1.6,0.8,0.8,mats.gold);
-banner(-5,5,-2,0x354b70);
-banner(5,5,-2,0x8c2734);
+floor(0,-35,18,12,mats.marble);
+for(const x of [-7,7])for(const z of [-39,-31])column(x,z,5);
+box(0,0,-39,5,.5,2,mats.gold,false);
+box(0,.5,-39,2.3,1.8,1.2,mats.blue,false);
+box(0,2.3,-39,1.6,.5,1,mats.gold,false);
+banner(-8,4,-30,0x344c72);
+banner(8,4,-30,0x863e43);
 
-// Библиотека
-for(let x=-27;x<=-18;x+=3) {
-  box(x,0.1,-8,1.8,3.5,0.55,mats.darkWood);
-  for(let y=0.8;y<3.3;y+=0.8) {
-    box(x,y,-7.68,1.65,0.08,0.08,mats.gold);
-    for(let i=0;i<5;i++) {
-      box(x-0.65+i*0.29,y+0.25,-7.75,
-        0.18,0.48,0.32,
-        new THREE.MeshStandardMaterial({
-          color:[0x6f3434,0x314e65,0x98733c,0x42563b][i%4]
-        }));
+// Библиотека слева
+for(const x of [-17,-14,-11]){
+  box(x,0,-31,2.1,3.5,.6,mats.darkWood,false);
+  for(let y=.8;y<3.2;y+=.8){
+    box(x,y,-30.65,1.9,.09,.08,mats.gold,false);
+    for(let i=0;i<5;i++){
+      const colors=[0x853d3b,0x34546e,0xb08b4e,0x425e48];
+      box(x-.7+i*.32,y+.18,-30.8,.2,.42,.3,
+        new THREE.MeshStandardMaterial({color:colors[i%4]}),false);
     }
   }
 }
 
-// Спальня
-box(22,0.25,-7,4.8,0.5,3.3,mats.darkWood);
-box(22,0.65,-7,4.3,0.35,3,mats.blue);
-box(22,1.5,-8.5,4.5,2,0.3,mats.wood);
-box(18.5,0.2,-1,1.3,1.2,1,mats.wood);
-sphere(18.5,1.4,-1,0.35,mats.gold);
+// Спальня справа
+box(14,0,-31,5,.5,3,mats.darkWood,false);
+box(14,.5,-31,4.7,.3,2.8,mats.blue,false);
+box(14,.8,-32.3,4.7,1.8,.25,mats.wood,false);
+box(10,0,-25,2,1.2,1.2,mats.wood,false);
 
-// Коридор южного крыла
-ground(0,10,5,10,mats.darkStone);
-wall(-2.8,10,0.4,10,4.5);
-wall(2.8,10,0.4,10,4.5);
+// Боковые комнаты
+floor(-15,-18,10,9,mats.floor);
+floor(15,-18,10,9,mats.floor);
+floor(-15,-7,10,9,mats.floor);
+floor(15,-7,10,9,mats.floor);
+box(-15,0,-18,3,.8,2,mats.wood,false);
+box(15,0,-18,3,.8,2,mats.wood,false);
 
-// Малые помещения вокруг двора
-room(-11,19,10,9,{opening:"south"});
-room(11,19,10,9,{opening:"south"});
-room(-11,31,10,9,{opening:"south"});
-room(11,31,10,9,{opening:"south"});
-
-// Факелы внутри замка
+// Декор и свет
 for(const p of [
-  [-13,2,-2],[-8,2,-2],[8,2,-2],[13,2,-2],
-  [-15,2,17],[15,2,17],[-10,2,30],[10,2,30],
-  [-2,2,9],[2,2,9]
-]) torch(...p);
+  [-18,2,-37],[-11,2,-37],[11,2,-37],[18,2,-37],
+  [-18,2,-9],[18,2,-9],[-8,2,-26],[8,2,-26],
+  [-18,2,-16],[18,2,-16]
+])torch(...p);
 
-/* =========================
-   ГОРОД
-========================= */
+for(const x of [-15,-8,8,15])window(x,3,-42);
 
-ground(0,54,70,36,mats.grass);
-ground(0,48,9,60,mats.floor);
+// Большой двор
+for(const x of [-17,-9,9,17]){
+  column(x,0,4);
+  column(x,25,4);
+}
+floor(0,0,42,5,mats.marble);
+floor(0,25,42,5,mats.marble);
 
-function house(x,z,color=0x76504a) {
-  const group=new THREE.Group();
-  scene.add(group);
-  const body=new THREE.Mesh(
-    new THREE.BoxGeometry(7,4.2,6),
-    new THREE.MeshStandardMaterial({color:0xc0ae91})
-  );
-  body.position.set(x,2.1,z);
-  body.castShadow=true;
-  group.add(body);
+// Фонтан
+cylinder(0,0,7,3.1,.65,mats.pale);
+cylinder(0,.65,7,2.7,.12,mats.water);
+cylinder(0,.77,7,.5,1.1,mats.gold);
+cylinder(0,1.9,7,.9,.12,mats.water);
 
-  const roof=new THREE.Mesh(
+// Садовые клумбы
+for(const side of [-1,1]){
+  for(let z=-2;z<=22;z+=6){
+    box(side*16,0,z,3,.35,2,mats.wood,false);
+    for(let i=0;i<5;i++){
+      sphere(side*16-1+i*.5,.65,z,.35,
+        new THREE.MeshStandardMaterial({color:[0x9b4653,0xd1b36a,0x7188a0][i%3]}));
+    }
+  }
+}
+
+/* ===== ГОРОД ===== */
+
+function house(x,z,roofColor=0x40566a){
+  // Фасад и отдельная крыша
+  box(x,0,z,7,4.5,6,mats.pale,true);
+  box(x,1,z-3.08,1.35,2.2,.15,mats.darkWood,false);
+  box(x-2,2,z-3.12,1.15,1.3,.13,mats.glass,false);
+  box(x+2,2,z-3.12,1.15,1.3,.13,mats.glass,false);
+
+  const r=new THREE.Mesh(
     new THREE.ConeGeometry(5.3,3.2,4),
-    new THREE.MeshStandardMaterial({color})
+    new THREE.MeshStandardMaterial({color:roofColor,roughness:.9})
   );
-  roof.position.set(x,5.5,z);
-  roof.rotation.y=Math.PI/4;
-  roof.castShadow=true;
-  group.add(roof);
+  r.position.set(x,6,z);r.rotation.y=Math.PI/4;
+  r.castShadow=true;scene.add(r);
+}
+house(-18,57,0x435a70);
+house(18,57,0x77434a);
+house(-29,76,0x536b65);
+house(29,76,0x8b6246);
+house(-13,84,0x59465c);
+house(14,84,0x425d6e);
 
-  const door=box(x,0.1,z-3.05,1.3,2.5,0.2,mats.darkWood);
-  colliders.push({x,z,w:7,d:6});
-  return group;
+// Уличные фонари
+for(const x of [-15,0,15]){
+  cylinder(x,0,43,.12,3,mats.iron);
+  box(x,3,43,.7,.6,.7,mats.gold,false);
+  const l=new THREE.PointLight(0xffc477,1.1,10);
+  l.position.set(x,3.4,43);scene.add(l);
 }
 
-house(-18,48,0x60404a);
-house(18,48,0x60404a);
-house(-27,65,0x455b69);
-house(27,65,0x455b69);
-house(-14,72,0x8b6045);
-house(15,72,0x8b6045);
+/* ===== ЛЕС ===== */
 
-// Фонари города
-for(const x of [-12,0,12]) {
-  cylinder(x,1,39,0.09,0.12,2,mats.iron);
-  sphere(x,2.2,39,0.22,
-    new THREE.MeshBasicMaterial({color:0xffd28a}));
-  const l=new THREE.PointLight(0xffc16b,1.2,7);
-  l.position.set(x,2.2,39);
-  scene.add(l);
-}
-
-/* =========================
-   ПРИРОДА
-========================= */
-
-function tree(x,z,scale=1) {
-  cylinder(x,scale*1.4,z,0.25*scale,0.42*scale,2.8*scale,mats.wood);
+function tree(x,z,s=1){
+  cylinder(x,0,z,.3*s,3*s,mats.wood,true);
   const crown=new THREE.Mesh(
-    new THREE.ConeGeometry(2.2*scale,5*scale,7),
-    mats.leaf
+    new THREE.ConeGeometry(2*s,5*s,7),mats.leaf
   );
-  crown.position.set(x,4.4*scale,z);
-  crown.castShadow=true;
-  scene.add(crown);
+  crown.position.set(x,5*s,z);crown.castShadow=true;scene.add(crown);
   const crown2=new THREE.Mesh(
-    new THREE.ConeGeometry(1.7*scale,4*scale,7),
-    mats.leaf2
+    new THREE.ConeGeometry(1.55*s,3.7*s,7),mats.leaf2
   );
-  crown2.position.set(x,6*scale,z);
-  scene.add(crown2);
-  colliders.push({x,z,w:0.8*scale,d:0.8*scale});
+  crown2.position.set(x,7*s,z);scene.add(crown2);
 }
-
-for(let i=0;i<85;i++) {
-  const x=-85+Math.random()*170;
-  const z=85+Math.random()*100;
-  if(Math.abs(x)<22 && z<110) continue;
-  tree(x,z,0.7+Math.random()*0.8);
+for(let i=0;i<110;i++){
+  const x=-90+Math.random()*180;
+  const z=105+Math.random()*90;
+  if(Math.abs(x)<12&&z<125)continue;
+  tree(x,z,.7+Math.random()*.8);
 }
-
-// Лесная тропа
-ground(0,110,7,80,new THREE.MeshStandardMaterial({color:0x927f61}));
-ground(-15,137,45,40,mats.grass2);
 
 // Озеро
 const lake=new THREE.Mesh(
-  new THREE.CircleGeometry(17,48),
-  mats.water
+  new THREE.CircleGeometry(17,48),mats.water
 );
 lake.rotation.x=-Math.PI/2;
-lake.position.set(38,0.02,118);
+lake.position.set(38,.02,123);
 scene.add(lake);
 
-// Берег
-for(let i=0;i<40;i++) {
-  const a=i/40*Math.PI*2;
-  const x=38+Math.cos(a)*18;
-  const z=118+Math.sin(a)*18;
-  sphere(x,0.1,z,0.7,mats.darkStone);
+// Каменистый берег
+for(let i=0;i<48;i++){
+  const a=i/48*Math.PI*2;
+  sphere(38+Math.cos(a)*18,.05,123+Math.sin(a)*18,.65,mats.shadowStone);
 }
 
 // Мост
-box(19,0.4,118,10,0.5,3,mats.wood);
-for(let x=15;x<=23;x+=2) {
-  box(x,1,116.4,0.2,1.2,0.2,mats.darkWood);
-  box(x,1,119.6,0.2,1.2,0.2,mats.darkWood);
+box(19,0,123,12,.5,3,mats.wood,false);
+for(let x=14;x<=24;x+=2){
+  box(x,.5,121.4,.18,1.2,.18,mats.darkWood,false);
+  box(x,.5,124.6,.18,1.2,.18,mats.darkWood,false);
 }
-box(19,1.5,116.4,10,0.15,0.15,mats.wood);
-box(19,1.5,119.6,10,0.15,0.15,mats.wood);
+box(19,1.1,121.4,12,.16,.16,mats.gold,false);
+box(19,1.1,124.6,12,.16,.16,mats.gold,false);
 
 // Руины
-ground(65,155,30,28,mats.darkStone);
-for(const p of [
-  [53,0,145],[77,0,145],[53,0,165],[77,0,165]
-]) {
-  column(p[0],p[2],5.5);
+floor(65,158,32,30,mats.shadowStone);
+for(const x of [52,65,78])for(const z of [146,170]){
+  column(x,z,5.5);
 }
-arch(65,145,8,5.5);
-box(65,0.2,155,8,0.4,8,mats.floor);
+banner(65,4,144,0x6d3444);
+box(65,0,158,8,.4,8,mats.floor,false);
 
-// Рунический круг
-const runeRing=new THREE.Mesh(
-  new THREE.TorusGeometry(4,0.12,8,48),
-  mats.gold
-);
-runeRing.rotation.x=Math.PI/2;
-runeRing.position.set(65,0.35,155);
-scene.add(runeRing);
+/* ===== ПРЕДМЕТЫ И ЗАГАДКИ ===== */
 
-/* =========================
-   ИНТЕРАКТИВНЫЕ ОБЪЕКТЫ
-========================= */
-
-function addInteractable(x,y,z,name,description,action) {
-  const marker=new THREE.Group();
-  marker.position.set(x,y,z);
-  scene.add(marker);
-
+function addObject(x,y,z,name,description,callback){
+  const group=new THREE.Group();
+  group.position.set(x,y,z);
+  scene.add(group);
   const gem=new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.32),
+    new THREE.OctahedronGeometry(.35),
     new THREE.MeshStandardMaterial({
-      color:0xc8a65d,
-      emissive:0x604018,
-      metalness:0.65,
-      roughness:0.2
+      color:0xc6a15b,emissive:0x4b3211,
+      metalness:.55,roughness:.25
     })
   );
-  marker.add(gem);
-
+  group.add(gem);
   const ring=new THREE.Mesh(
-    new THREE.TorusGeometry(0.48,0.025,8,24),
-    mats.gold
+    new THREE.TorusGeometry(.5,.025,8,24),mats.gold
   );
   ring.rotation.x=Math.PI/2;
-  marker.add(ring);
+  group.add(ring);
+  interactables.push({group,name,description,callback});
+}
 
-  interactables.push({
-    group:marker, name, description, action, gem
+addObject(-15,1.3,-31,"Старая запись",
+  "На полях нарисованы три символа.",
+  ()=>{
+    if(inventory.includes("Старая запись"))return say("Ты уже забрала запись.");
+    inventory.push("Старая запись");updateInventory();
+    say("Ты нашла старую запись из королевской библиотеки.");
+  }
+);
+
+addObject(0,1.5,-39,"Королевская печать",
+  "Золотой предмет на троне.",
+  ()=>{
+    if(inventory.includes("Королевская печать"))return say("Печать уже у тебя.");
+    inventory.push("Королевская печать");updateInventory();
+    say("Получена королевская печать.");
+  }
+);
+
+const runePoints=[[65,1.3,158],[65,1.3,151],[59,1.3,158]];
+runePoints.forEach((p,i)=>{
+  addObject(...p,"Древний символ","На камне видны незнакомые знаки.",()=>{
+    if(runeCount<=i){
+      runeCount++;
+      inventory.push("Рунический знак "+runeCount);
+      updateInventory();
+      say("Символ отозвался слабым сиянием.");
+    }else say("Этот знак уже активирован.");
   });
-}
+});
 
-addInteractable(
-  -22,1.5,-4,
-  "Старая книга",
-  "На обложке почти стёрт герб королевской семьи.",
+// Древние ворота
+const gate=box(65,0,143,5,5,.6,mats.iron,true);
+addObject(65,1.5,140,"Осмотреть ворота",
+  "На воротах вырезаны три пустых символа.",
   ()=>{
-    if(!inventory.includes("Запись из библиотеки")) {
-      inventory.push("Запись из библиотеки");
-      updateInventory();
-      say("Ты нашла старую запись. На полях нарисованы три символа.");
-    } else say("Ты уже забрала эту запись.");
+    if(runeCount<3)return say("Ворота не реагируют. Не хватает трёх символов.");
+    if(gateOpen)return say("Ворота уже открыты.");
+    gate.visible=false;
+    gateOpen=true;
+    say("Механизм сработал. Ворота открылись.");
   }
 );
 
-addInteractable(
-  0,1.5,-10,
-  "Королевская печать",
-  "Металл холодный, хотя в зале тепло.",
-  ()=>{
-    if(!inventory.includes("Королевская печать")) {
-      inventory.push("Королевская печать");
-      updateInventory();
-      say("Получен предмет: Королевская печать.");
-    }
-  }
-);
+/* ===== КОЛЛИЗИИ ===== */
 
-addInteractable(
-  65,1.3,155,
-  "Рунический круг",
-  "Три символа. Кажется, они должны быть активированы в определённом порядке.",
-  ()=>{
-    if(!inventory.includes("Запись из библиотеки")) {
-      say("Символы слишком древние. Возможно, в замке есть подсказка.");
-      return;
-    }
-    runeProgress++;
-    if(runeProgress>=3 && !puzzleSolved) {
-      puzzleSolved=true;
-      inventory.push("Осколок древнего ключа");
-      updateInventory();
-      say("Рунический круг вспыхнул. Камень под ногами сдвинулся.");
-      runeRing.material=new THREE.MeshStandardMaterial({
-        color:0x6cc8d1,emissive:0x286b75
-      });
-    } else {
-      say(["Первый символ отозвался тихим звоном.",
-        "Второй символ загорелся.",
-        "Что-то глубоко под землёй пришло в движение."][runeProgress-1]);
-    }
-  }
-);
-
-function updateInventory() {
-  ui.inventory.innerHTML="ИНВЕНТАРЬ<br>"+
-    (inventory.length ? inventory.map(x=>"• "+x).join("<br>") : "Пусто");
-}
-
-function say(text) {
-  ui.message.textContent=text;
-  ui.message.style.display="block";
-  messageTimer=4;
-}
-
-/* =========================
-   ДВИЖЕНИЕ И КОЛЛИЗИИ
-========================= */
-
-function collides(x,z) {
-  for(const c of colliders) {
-    if(
-      Math.abs(x-c.x)<c.w/2+player.radius &&
-      Math.abs(z-c.z)<c.d/2+player.radius
-    ) return true;
+function blocked(x,z){
+  for(const c of colliders){
+    if(Math.abs(x-c.x)<c.w/2+.3 &&
+       Math.abs(z-c.z)<c.d/2+.3)return true;
   }
   return false;
 }
-
-function movePlayer(dx,dz) {
+function move(dx,dz){
   const nx=player.x+dx;
   const nz=player.z+dz;
-
-  if(!collides(nx,player.z)) player.x=nx;
-  if(!collides(player.x,nz)) player.z=nz;
+  if(!blocked(nx,player.z))player.x=nx;
+  if(!blocked(player.x,nz))player.z=nz;
 }
+
+/* ===== СООБЩЕНИЯ И ИНВЕНТАРЬ ===== */
+
+function say(text){
+  const el=document.getElementById("message");
+  el.textContent=text;
+  el.style.display="block";
+  messageTime=4;
+}
+function updateInventory(){
+  document.getElementById("items").innerHTML=
+    inventory.length?inventory.map(v=>"✦ "+v).join("<br><br>"):"Пока пусто.";
+}
+function interact(){
+  if(nearby)nearby.callback();
+  else say("Поблизости ничего интересного.");
+}
+
+/* ===== КАРТА ===== */
+
+const mapCanvas=document.getElementById("mapCanvas");
+const ctx=mapCanvas.getContext("2d");
+const CELL=5;
+const RANGE=170;
+
+function reveal(){
+  const gx=Math.floor((player.x+RANGE)/CELL);
+  const gz=Math.floor((player.z+RANGE)/CELL);
+  for(let x=-3;x<=3;x++)for(let z=-3;z<=3;z++){
+    if(x*x+z*z<=13)discovered.add((gx+x)+","+(gz+z));
+  }
+}
+
+function mapPoint(x,z){
+  return {
+    x:(x+RANGE)/(RANGE*2)*480,
+    y:(z+RANGE)/(RANGE*2)*480
+  };
+}
+
+function drawMap(){
+  ctx.fillStyle="#283a36";
+  ctx.fillRect(0,0,480,480);
+
+  // Сначала известные области
+  for(const key of discovered){
+    const [gx,gz]=key.split(",").map(Number);
+    const x=(gx*CELL-RANGE)/(RANGE*2)*480;
+    const y=(gz*CELL-RANGE)/(RANGE*2)*480;
+    ctx.fillStyle="#a99a76";
+    ctx.fillRect(x,y,8,8);
+  }
+
+  // Маркер игрока
+  const p=mapPoint(player.x,player.z);
+  ctx.fillStyle="#f2d38a";
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,6,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle="#fff";
+  ctx.stroke();
+}
+
+document.getElementById("mapButton").onclick=()=>{
+  document.getElementById("mapPanel").style.display="block";
+  mapVisible=true;drawMap();
+};
+document.getElementById("closeMap").onclick=()=>{
+  document.getElementById("mapPanel").style.display="none";
+  mapVisible=false;
+};
+document.getElementById("bagButton").onclick=()=>{
+  document.getElementById("bagPanel").style.display="block";
+};
+document.getElementById("closeBag").onclick=()=>{
+  document.getElementById("bagPanel").style.display="none";
+};
+
+/* ===== СОХРАНЕНИЕ ===== */
+
+function save(){
+  try{
+    localStorage.setItem("forgottenKingdomSave",JSON.stringify({
+      x:player.x,z:player.z,inventory,
+      discovered:[...discovered],runeCount,gateOpen
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem("forgottenKingdomSave")||"null");
+    if(!d)return;
+    player.x=d.x??0;player.z=d.z??24;
+    if(Array.isArray(d.inventory))inventory.push(...d.inventory);
+    if(Array.isArray(d.discovered))d.discovered.forEach(v=>discovered.add(v));
+    runeCount=d.runeCount||0;
+    gateOpen=!!d.gateOpen;
+    if(gateOpen)gate.visible=false;
+    updateInventory();
+  }catch(e){}
+}
+load();
+
+/* ===== УПРАВЛЕНИЕ ===== */
 
 const keys={};
 addEventListener("keydown",e=>{
-  keys[e.key.toLowerCase()]=true;
-  if(e.key==="e" || e.key==="Enter") interact();
-  if(e.key===" " && grounded) jumpVelocity=6;
+  keys[e.code]=true;
+  if(e.code==="KeyE"||e.code==="Enter")interact();
+  if(e.code==="Space"&&grounded){
+    vy=6.5;grounded=false;
+  }
 });
-addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+addEventListener("keyup",e=>keys[e.code]=false);
 
-function interact() {
-  if(nearbyObject) nearbyObject.action();
-}
+let lookId=null,lastX=0,lastY=0;
+const lookArea=document.getElementById("lookArea");
+lookArea.addEventListener("pointerdown",e=>{
+  lookId=e.pointerId;lastX=e.clientX;lastY=e.clientY;
+  lookArea.setPointerCapture(e.pointerId);
+});
+lookArea.addEventListener("pointermove",e=>{
+  if(e.pointerId!==lookId)return;
+  yaw-=(e.clientX-lastX)*.005;
+  pitch-=(e.clientY-lastY)*.004;
+  pitch=THREE.MathUtils.clamp(pitch,-1.25,1.25);
+  lastX=e.clientX;lastY=e.clientY;
+});
+lookArea.addEventListener("pointerup",()=>lookId=null);
+lookArea.addEventListener("pointercancel",()=>lookId=null);
 
-/* =========================
-   КАМЕРА И МОБИЛЬНОЕ УПРАВЛЕНИЕ
-========================= */
-
-let moveX=0,moveY=0;
-let lookPointer=null;
-let lastLookX=0,lastLookY=0;
-let lookSensitivity=0.004;
-
+// Джойстик
 const stick=document.getElementById("stick");
 const nub=document.getElementById("nub");
+let stickId=null;
 
 stick.addEventListener("pointerdown",e=>{
+  stickId=e.pointerId;
   stick.setPointerCapture(e.pointerId);
   updateStick(e);
 });
 stick.addEventListener("pointermove",e=>{
-  if(e.buttons) updateStick(e);
+  if(e.pointerId===stickId)updateStick(e);
 });
+function updateStick(e){
+  const r=stick.getBoundingClientRect();
+  let dx=e.clientX-(r.left+r.width/2);
+  let dy=e.clientY-(r.top+r.height/2);
+  const len=Math.hypot(dx,dy),max=38;
+  if(len>max){dx=dx/len*max;dy=dy/len*max;}
+  joystickX=dx/max;joystickY=dy/max;
+  nub.style.left=(34+dx)+"px";
+  nub.style.top=(34+dy)+"px";
+}
+function resetStick(){
+  stickId=null;joystickX=0;joystickY=0;
+  nub.style.left="34px";nub.style.top="34px";
+}
 stick.addEventListener("pointerup",resetStick);
 stick.addEventListener("pointercancel",resetStick);
 
-function updateStick(e) {
-  const r=stick.getBoundingClientRect();
-  const cx=r.left+r.width/2;
-  const cy=r.top+r.height/2;
-  let dx=e.clientX-cx,dy=e.clientY-cy;
-  const len=Math.hypot(dx,dy);
-  const max=40;
-  if(len>max) { dx=dx/len*max; dy=dy/len*max; }
-  nub.style.left=(34+dx)+"px";
-  nub.style.top=(34+dy)+"px";
-  moveX=dx/max;
-  moveY=dy/max;
-}
-function resetStick() {
-  moveX=0;moveY=0;
-  nub.style.left="34px";
-  nub.style.top="34px";
-}
-
-renderer.domElement.addEventListener("pointerdown",e=>{
-  if(e.pointerType==="mouse") {
-    renderer.domElement.requestPointerLock?.();
-  } else {
-    lookPointer=e.pointerId;
-    lastLookX=e.clientX;
-    lastLookY=e.clientY;
-  }
-});
-
-renderer.domElement.addEventListener("pointermove",e=>{
-  if(document.pointerLockElement===renderer.domElement) {
-    yaw-=e.movementX*0.0025;
-    pitch-=e.movementY*0.0025;
-  } else if(e.pointerId===lookPointer) {
-    yaw-=(e.clientX-lastLookX)*lookSensitivity;
-    pitch-=(e.clientY-lastLookY)*lookSensitivity;
-    lastLookX=e.clientX;
-    lastLookY=e.clientY;
-  }
-});
-
-renderer.domElement.addEventListener("pointerup",e=>{
-  if(e.pointerId===lookPointer) lookPointer=null;
-});
-
 document.getElementById("jump").addEventListener("pointerdown",()=>{
-  if(grounded) jumpVelocity=6;
+  if(grounded){vy=6.5;grounded=false;}
 });
-document.getElementById("run").addEventListener("pointerdown",()=>isRunning=true);
-document.getElementById("run").addEventListener("pointerup",()=>isRunning=false);
-document.getElementById("run").addEventListener("pointercancel",()=>isRunning=false);
-document.getElementById("interact").addEventListener("click",interact);
+const runButton=document.getElementById("run");
+runButton.addEventListener("pointerdown",()=>running=true);
+runButton.addEventListener("pointerup",()=>running=false);
+runButton.addEventListener("pointercancel",()=>running=false);
+runButton.addEventListener("pointerleave",()=>running=false);
+document.getElementById("act").addEventListener("click",interact);
 
-/* =========================
-   КАРТА И ИССЛЕДОВАНИЕ
-========================= */
+/* ===== ИГРОВОЙ ЦИКЛ ===== */
 
-const mapCtx=ui.mapCanvas.getContext("2d");
-const MAP_SIZE=500;
-const WORLD_RANGE=190;
-const CELL=5;
-const discovered=new Set();
+let saveTimer=0,frame=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.04);
 
-function worldToMap(x,z) {
-  return {
-    x:(x+WORLD_RANGE)/(WORLD_RANGE*2)*MAP_SIZE,
-    y:(z+WORLD_RANGE)/(WORLD_RANGE*2)*MAP_SIZE
-  };
-}
+  const f=(keys.KeyW||keys.ArrowUp?1:0)-
+          (keys.KeyS||keys.ArrowDown?1:0)-joystickY;
+  const s=(keys.KeyD||keys.ArrowRight?1:0)-
+          (keys.KeyA||keys.ArrowLeft?1:0)+joystickX;
+  const len=Math.hypot(f,s);
 
-function reveal() {
-  const gx=Math.floor((player.x+WORLD_RANGE)/CELL);
-  const gz=Math.floor((player.z+WORLD_RANGE)/CELL);
-  for(let x=-3;x<=3;x++) {
-    for(let z=-3;z<=3;z++) {
-      discovered.add((gx+x)+","+(gz+z));
-    }
-  }
-}
-
-function drawMap() {
-  mapCtx.fillStyle="#263b37";
-  mapCtx.fillRect(0,0,500,500);
-
-  // Озеро
-  const lakePos=worldToMap(38,118);
-  mapCtx.fillStyle="#416f82";
-  mapCtx.beginPath();
-  mapCtx.ellipse(lakePos.x,lakePos.y,22,22,0,0,Math.PI*2);
-  mapCtx.fill();
-
-  // Замок
-  const castle=worldToMap(0,0);
-  mapCtx.fillStyle="#927f68";
-  mapCtx.fillRect(castle.x-40,castle.y-35,80,70);
-
-  // Город
-  const town=worldToMap(0,54);
-  mapCtx.fillStyle="#9a805d";
-  mapCtx.fillRect(town.x-40,town.y-22,80,44);
-
-  // Исследованные клетки
-  mapCtx.fillStyle="#bba77b";
-  for(const cell of discovered) {
-    const [gx,gz]=cell.split(",").map(Number);
-    const x=(gx*CELL-WORLD_RANGE)/(WORLD_RANGE*2)*500;
-    const y=(gz*CELL-WORLD_RANGE)/(WORLD_RANGE*2)*500;
-    mapCtx.fillRect(x,y,7,7);
+  if(len>.05){
+    const speed=(running||keys.ShiftLeft||keys.ShiftRight)?8:4.3;
+    const forward=f/Math.max(1,len);
+    const side=s/Math.max(1,len);
+    const dx=(-Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed*dt;
+    const dz=(-Math.cos(yaw)*forward-Math.sin(yaw)*side)*speed*dt;
+    move(dx,dz);
   }
 
-  // Маркер игрока
-  const p=worldToMap(player.x,player.z);
-  mapCtx.fillStyle="#f4df9c";
-  mapCtx.beginPath();
-  mapCtx.arc(p.x,p.y,6,0,Math.PI*2);
-  mapCtx.fill();
-  mapCtx.strokeStyle="#fff";
-  mapCtx.lineWidth=2;
-  mapCtx.stroke();
-}
-
-document.getElementById("mapButton").onclick=()=>{
-  mapOpen=true;
-  ui.map.style.display="block";
-  drawMap();
-};
-document.getElementById("closeMap").onclick=()=>{
-  mapOpen=false;
-  ui.map.style.display="none";
-};
-
-/* =========================
-   СОХРАНЕНИЕ
-========================= */
-
-function saveGame() {
-  const data={
-    x:player.x,z:player.z,
-    inventory,
-    discovered:[...discovered],
-    runeProgress,puzzleSolved
-  };
-  try {
-    localStorage.setItem("forgottenKingdomSave",JSON.stringify(data));
-  } catch(e) {}
-}
-
-function loadGame() {
-  try {
-    const raw=localStorage.getItem("forgottenKingdomSave");
-    if(!raw) return;
-    const data=JSON.parse(raw);
-    player.x=data.x ?? 0;
-    player.z=data.z ?? 28;
-    inventory.push(...(data.inventory||[]));
-    (data.discovered||[]).forEach(v=>discovered.add(v));
-    runeProgress=data.runeProgress||0;
-    puzzleSolved=!!data.puzzleSolved;
-    updateInventory();
-  } catch(e) {}
-}
-
-loadGame();
-
-/* =========================
-   ПОГОДА И АТМОСФЕРА
-========================= */
-
-const clouds=[];
-for(let i=0;i<12;i++) {
-  const cloud=new THREE.Group();
-  const cloudMat=new THREE.MeshStandardMaterial({
-    color:0xe3e5e2,transparent:true,opacity:0.72
-  });
-  for(let j=0;j<4;j++) {
-    const puff=new THREE.Mesh(
-      new THREE.SphereGeometry(2.4,10,8),cloudMat
-    );
-    puff.position.set(j*2.3,Math.random()*0.5,Math.random()*0.6);
-    cloud.add(puff);
-  }
-  cloud.position.set(-90+Math.random()*180,35+Math.random()*15,
-    -100+Math.random()*180);
-  scene.add(cloud);
-  clouds.push(cloud);
-}
-
-/* =========================
-   ГЛАВНЫЙ ЦИКЛ
-========================= */
-
-function update(dt) {
-  const forward=(keys.w||keys.arrowup ? 1:0) -
-                (keys.s||keys.arrowdown ? 1:0) - moveY;
-  const side=(keys.d||keys.arrowright ? 1:0) -
-             (keys.a||keys.arrowleft ? 1:0) + moveX;
-
-  const length=Math.hypot(forward,side);
-  const speed=(isRunning||keys.shift ? 8:4.2);
-
-  if(length>0.05) {
-    const f=forward/Math.max(1,length);
-    const s=side/Math.max(1,length);
-    const dx=(-Math.sin(yaw)*f+Math.cos(yaw)*s)*speed*dt;
-    const dz=(-Math.cos(yaw)*f-Math.sin(yaw)*s)*speed*dt;
-    movePlayer(dx,dz);
-  }
-
-  if(!grounded) {
-    jumpVelocity-=15*dt;
-    player.y+=jumpVelocity*dt;
-    if(player.y<=1.7) {
-      player.y=1.7;
-      grounded=true;
-      jumpVelocity=0;
+  if(!grounded){
+    vy-=16*dt;
+    player.y+=vy*dt;
+    if(player.y<=1.7){
+      player.y=1.7;vy=0;grounded=true;
     }
   }
 
-  pitch=THREE.MathUtils.clamp(pitch,-1.25,1.25);
   camera.position.set(player.x,player.y,player.z);
-  camera.rotation.order="YXZ";
-  camera.rotation.y=yaw;
-  camera.rotation.x=pitch;
+  camera.rotation.set(pitch,yaw,0,"YXZ");
 
-  // Поиск ближайшего объекта
-  nearbyObject=null;
-  let closest=2.8;
-
-  for(const item of interactables) {
-    item.group.rotation.y+=dt*0.45;
-    item.gem.rotation.x+=dt*0.5;
-    const dist=Math.hypot(
+  nearby=null;
+  let best=3.2;
+  for(const item of interactables){
+    item.group.rotation.y+=dt*.5;
+    const d=Math.hypot(
       player.x-item.group.position.x,
       player.z-item.group.position.z
     );
-    if(dist<closest) {
-      closest=dist;
-      nearbyObject=item;
-    }
+    if(d<best){best=d;nearby=item;}
   }
 
-  if(nearbyObject) {
-    ui.hint.style.display="block";
-    ui.hint.innerHTML="<b>"+nearbyObject.name+"</b><br>"+
-      nearbyObject.description+"<br><br>Нажми ДЕЙСТВИЕ";
-  } else {
-    ui.hint.style.display="none";
-  }
+  const hint=document.getElementById("hint");
+  if(nearby){
+    hint.style.display="block";
+    hint.innerHTML="<b>"+nearby.name+"</b><br>"+nearby.description+"<br><br>НАЖМИ ДЕЙСТВИЕ";
+  }else hint.style.display="none";
 
   reveal();
 
-  if(messageTimer>0) {
-    messageTimer-=dt;
-    if(messageTimer<=0) ui.message.style.display="none";
+  if(messageTime>0){
+    messageTime-=dt;
+    if(messageTime<=0)document.getElementById("message").style.display="none";
   }
 
-  for(const c of clouds) c.position.x+=dt*0.25;
-}
-
-let saveTimer=0;
-function animate() {
-  requestAnimationFrame(animate);
-  const dt=Math.min(clock.getDelta(),0.04);
-  update(dt);
+  if(frame++%25===0){
+    let name="ROYAL COURTYARD";
+    if(player.z<-2&&player.z>-43)name="THE ROYAL CASTLE";
+    else if(player.z>40&&player.z<100)name="THE OLD TOWN";
+    else if(player.z>=100&&player.x<30)name="THE WHISPERING WOODS";
+    else if(player.z>100&&player.x>30)name="THE SILENT LAKE";
+    else if(player.x>48&&player.z>140)name="THE FORGOTTEN RUINS";
+    document.getElementById("location").textContent=name;
+  }
 
   saveTimer+=dt;
-  if(saveTimer>8) {
-    saveGame();
-    saveTimer=0;
-  }
+  if(saveTimer>10){save();saveTimer=0;}
 
   renderer.render(scene,camera);
 }
-animate();
 
-addEventListener("beforeunload",saveGame);
+updateInventory();
+reveal();
+say("Путешествие начинается.");
+animate();
 
 addEventListener("resize",()=>{
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
-
-reveal();
-say("Королевство молчит. Пока что.");
+addEventListener("beforeunload",save);
 </script>
 </body>
 </html>
+ 
